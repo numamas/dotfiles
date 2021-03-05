@@ -25,8 +25,7 @@ vk1D & F11:: Send, {Volume_Down}
 vk1D & F12:: Send, {Volume_Up}
 
 vk1D & Q:: Send, !{Space}n
-vk1D & R:: Run, "powershell.exe" /c %A_ScriptDir%\fzfer.ps1, , Hide
-
+vk1D & R:: Run, "powershell.exe" /c %A_ScriptDir%\fzfwindow.ps1, , Hide
 vk1D & Insert:: Run, "cmd.exe" /c "cd %SYSTEMDRIVE%\data\download & pwsh"
 
 ;#IfWinActive ahk_exe Code.exe
