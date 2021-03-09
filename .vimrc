@@ -1,11 +1,5 @@
 " vim: filetype=vim foldmethod=marker foldmarker=#region,#endregion :
 
-let plug_path = $HOME . '/.vim/autoload/plug.vim'
-if !filereadable(plug_path)
-    execute '!curl --create-dirs -sfLo ' . plug_path . ' https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-    call mkdir(expand("~/.vim/colors"), "p")
-endif
-
 set runtimepath+=~/.vim  " for windows
 if filereadable( expand('~/.vim/autoload/plug.vim') )
     call plug#begin('~/.vim/plugged')
@@ -102,6 +96,15 @@ if filereadable( expand('~/.vim/autoload/plug.vim') )
     highlight ALEWarning ctermbg=Brown
     highlight ALEError   ctermbg=DarkRed
 endif
+
+command PlugSetup :call PlugSetup()
+function! PlugSetup()
+    let plug_path = $HOME . '/.vim/autoload/plug.vim'
+    if !filereadable(plug_path)
+        execute '!curl --create-dirs -sfLo ' . plug_path . ' https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+        call mkdir(expand("~/.vim/colors"), "p")
+    endif
+endfunction
 
 language C
 set number
