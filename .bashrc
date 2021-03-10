@@ -196,3 +196,37 @@ if type tmux > /dev/null 2>&1; then
 fi
 #endregion
 
+blockinfile() {
+    if [ $# != 2 ]; then
+        echo 'error: wrong number of arguments' 1>&2
+        return 2
+    elif [ -t 0 ]; then
+        echo 'error: stdin is empty' 1>&2
+        return 3
+    fi
+
+    # args
+    local file="$1"
+    local marker="$2"
+    local content=`cat -`
+
+    # edit
+    local begin="$marker __BEGIN__"
+    local end="$marker __END__"
+    local pattern="$begin[\s\S]*?$end"
+    local block="$begin\n$content\n$end"
+    if grep -qPzo "$pattern" "$file"; then
+    python3 -c "import re; f = open('$file', 'r'); data = f.read(); f.close(); f = open('$file', 'w'); f.write(re.sub('''$pattern''', '''$block''', data)); f.close()"
+    else
+        echo -e "\n$block" >> "$file"
+    fi
+}
+
+setup_brew() {
+    local brew='/home/linuxbrew/.linuxbrew/bin/brew'
+    if [ ! -f "$brew" ]; then
+        bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        eval $($brew shellenv)
+    fi
+    echo "eval \$($brew shellenv)" | blockinfile "$HOME/.profile" "# Homebrew"
+}
