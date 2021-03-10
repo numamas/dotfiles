@@ -121,6 +121,7 @@ set backspace=2
 set scrolloff=4
 set splitbelow
 set laststatus=0
+set cmdheight=1 " gui
 set rulerformat=%40(%=%t%m%r%h%w\ \|\ %{&fileencoding}\ %{&fileformat}\ \|\ %P%)
 set list | set listchars=tab:\|\ ,extends:»,precedes:«,nbsp:%
 set expandtab
