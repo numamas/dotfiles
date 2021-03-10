@@ -216,7 +216,7 @@ blockinfile() {
     local pattern="$begin[\s\S]*?$end"
     local block="$begin\n$content\n$end"
     if grep -qPzo "$pattern" "$file"; then
-    python3 -c "import re; f = open('$file', 'r'); data = f.read(); f.close(); f = open('$file', 'w'); f.write(re.sub('''$pattern''', '''$block''', data)); f.close()"
+        python3 -c "import re; f = open('$file', 'r'); data = f.read(); f.close(); f = open('$file', 'w'); f.write(re.sub('''$pattern''', '''$block''', data)); f.close()"
     else
         echo -e "\n$block" >> "$file"
     fi
