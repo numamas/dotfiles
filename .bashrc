@@ -257,17 +257,10 @@ setup_vbox() {
             && sudo /mnt/VBoxLinuxAdditions.run \
             && sudo umount /mnt \
             && rm "./VBoxGuestAdditions_${input}.iso"
-
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
     fi
 
     if ! groups $(whoami) | grep -q 'vboxsf'; then
         sudo gpasswd -a $(whoami) vboxsf
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
     fi
 }
 #endregion
