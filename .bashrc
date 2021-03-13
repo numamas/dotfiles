@@ -147,6 +147,131 @@ EOS
 
 #endregion
 
+#region: setup scripts
+blockinfile() {
+    if [ $# != 2 ]; then
+        echo 'error: wrong number of arguments' 1>&2
+        return 2
+    elif [ -t 0 ]; then
+        echo 'error: stdin is empty' 1>&2
+        return 3
+    fi
+
+    # args
+    local file="$1"
+    local marker="$2"
+    local content=`cat -`
+
+    # edit
+    echo -n "  Editing $file for $marker block... "
+    local begin="$marker __BEGIN__"
+    local end="$marker __END__"
+    local pattern="$begin[\s\S]*?$end"
+    local block="$begin\n$content\n$end"
+    if grep -qPzo "$pattern" "$file"; then
+        python3 -c "import re; f = open('$file', 'r'); data = f.read(); f.close(); f = open('$file', 'w'); f.write(re.sub('''$pattern''', '''$block''', data)); f.close()"
+        echo 'overwrite'
+    else
+        echo -e "\n$block" >> "$file"
+        echo 'append'
+    fi
+}
+
+apt_install() {
+    for x in "$@"; do
+        printf "  [apt]  %-20s " "$x"
+        if ! dpkg -L "$x" > /dev/null 2>&1; then
+            sudo -E apt install -y "$x" > /tmp/setup.log 2>&1
+            if [ $? -ne 0 ]; then
+                printf '\033[31m failed \033[m\n'
+                return 1
+            fi
+            printf '\033[32m done \033[m\n'
+        else
+            echo ' already installed '
+        fi
+    done
+}
+
+brew_install() {
+    local list=`brew list --formula`
+    for x in "$@"; do
+        local name=`echo $x | awk -F'/' '{print $NF}'`
+        printf "  [brew] %-20s " "$name"
+        if ! echo $list | grep -q "\b$name\b"; then
+            brew install "$x" > /tmp/setup.log 2>&1
+            if [ $? -ne 0 ]; then
+                printf '\033[31m failed \033[m\n'
+                return 1
+            fi
+            printf '\033[32m done \033[m\n'
+        else
+            echo ' already installed '
+        fi
+    done
+}
+
+setup_bin() {
+    # essential
+    apt_install build-essential curl colordiff fzf git ripgrep vim-gtk xsel
+    brew_install bat exa
+
+    # common lisp
+    # https://moremagic.hateblo.jp/entry/2018/06/16/095231
+    apt_install libcurl4-openssl-dev zlib1g-dev build-essential
+    brew_install roswell
+
+    # clojure
+    brew_install leiningen borkdude/brew/babashka clojure
+
+    # go
+    brew_install go
+
+    # erlang
+    brew_install erlang
+}
+
+setup_brew() {
+    local brew='/home/linuxbrew/.linuxbrew/bin/brew'
+    if [ ! -f "$brew" ]; then
+        bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    fi
+    eval $($brew shellenv)
+    echo "eval \$($brew shellenv)" | blockinfile "$HOME/.profile" "# Homebrew"
+}
+
+
+setup_vbox() {
+    if ! type VBoxClient > /dev/null 2>&1; then
+        echo -n '  VirtualBox Version (6.1.4): '
+        read input
+        if [ "$input" == "" ]; then
+            input='6.1.4'
+        fi
+
+        wget "http://download.virtualbox.org/virtualbox/${input}/VBoxGuestAdditions_${input}.iso" \
+            && sudo mount -t iso9660 -o loop "VBoxGuestAdditions_${input}.iso" /mnt \
+            && sudo /mnt/VBoxLinuxAdditions.run \
+            && sudo umount /mnt \
+            && rm "./VBoxGuestAdditions_${input}.iso"
+
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    fi
+
+    if ! groups $(whoami) | grep -q 'vboxsf'; then
+        sudo gpasswd -a $(whoami) vboxsf
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    fi
+}
+#endregion
+
 #region: ~/.tmux.conf
 cat << 'SHELL' > ~/.tmux.conf
 set -g mouse on
@@ -195,38 +320,3 @@ if type tmux > /dev/null 2>&1; then
     fi
 fi
 #endregion
-
-blockinfile() {
-    if [ $# != 2 ]; then
-        echo 'error: wrong number of arguments' 1>&2
-        return 2
-    elif [ -t 0 ]; then
-        echo 'error: stdin is empty' 1>&2
-        return 3
-    fi
-
-    # args
-    local file="$1"
-    local marker="$2"
-    local content=`cat -`
-
-    # edit
-    local begin="$marker __BEGIN__"
-    local end="$marker __END__"
-    local pattern="$begin[\s\S]*?$end"
-    local block="$begin\n$content\n$end"
-    if grep -qPzo "$pattern" "$file"; then
-        python3 -c "import re; f = open('$file', 'r'); data = f.read(); f.close(); f = open('$file', 'w'); f.write(re.sub('''$pattern''', '''$block''', data)); f.close()"
-    else
-        echo -e "\n$block" >> "$file"
-    fi
-}
-
-setup_brew() {
-    local brew='/home/linuxbrew/.linuxbrew/bin/brew'
-    if [ ! -f "$brew" ]; then
-        bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        eval $($brew shellenv)
-    fi
-    echo "eval \$($brew shellenv)" | blockinfile "$HOME/.profile" "# Homebrew"
-}
