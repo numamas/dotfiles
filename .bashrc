@@ -8,7 +8,6 @@ if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
     # virtualbox
     startvm() {
         name="$1"; port="$2"; user="$3"
-        tmux detach-client
         VBoxManage.exe startvm "$name" --type headless 2> /dev/null
         ssh -Y -p $port $user@localhost
     }
