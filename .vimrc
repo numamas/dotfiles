@@ -183,6 +183,7 @@ vmap     <C-_>  <Plug>Commentary
 imap     <C-_>  <C-o><Plug>CommentaryLine
 
 " Lisp
+set lispwords+=when-let,go-loop
 nmap <C-j>  <Plug>(sexp_swap_element_forward)
 nmap <C-k>  <Plug>(sexp_swap_element_backward)
 nmap <C-h>  <Plug>(sexp_flow_to_prev_open)<Plug>(sexp_indent_top)
