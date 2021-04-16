@@ -1,5 +1,20 @@
 # vim: filetype=sh foldmethod=marker foldmarker=#region,#endregion :
 
+#region: WSL
+if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+    # clipboard sharing
+    export DISPLAY=localhost:0.0
+
+    # virtualbox
+    startvm() {
+        name="$1"; port="$2"; user="$3"
+        tmux detach-client
+        VBoxManage.exe startvm "$name" --type headless 2> /dev/null
+        ssh -Y -p $port $user@localhost
+    }
+fi
+#endregion
+
 #region: export
 export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 export PROMPT_DIRTRIM=3
@@ -14,10 +29,6 @@ $HOME/.local/bin
 $HOME/.vim/plugged/vim-iced/bin
 EOS
 `
-# clipboard sharing
-if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
-    export DISPLAY=localhost:0.0
-fi
 
 # read proxy config
 if [ -f "$HOME/config/proxy" ]; then
