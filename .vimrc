@@ -84,17 +84,13 @@ if filereadable( expand('~/.vim/autoload/plug.vim') )
     " autocmd BufWinEnter *.cljc :IcedConnect
 
     " Golang
-    " Plug 'josa42/coc-go', { 'do': 'yarn install --frozen-lockfile' }  " gopls
+    " check node yarn coc
+    Plug 'josa42/coc-go', { 'do': 'yarn install --frozen-lockfile' }  " gopls
     Plug 'mattn/vim-goimports', { 'for': 'go' }  " gofmt, goimports
 
+    " test
+    Plug 'alaviss/nim.nvim'
     call plug#end()
-
-    if filereadable(expand('~/.vim/colors/rupza.vim'))
-        colorscheme rupza  " should be placed between plug#end() and other highlight commands.
-    endif
-
-    highlight ALEWarning ctermbg=Brown
-    highlight ALEError   ctermbg=DarkRed
 endif
 
 command PlugSetup :call PlugSetup()
@@ -105,6 +101,15 @@ function! PlugSetup()
         call mkdir(expand("~/.vim/colors"), "p")
     endif
 endfunction
+
+" colorscheme
+if filereadable(expand('~/.vim/colors/rupza.vim'))
+    colorscheme rupza
+elseif has('gui_running')
+    colorscheme evening
+else
+    colorscheme slate
+endif
 
 language C
 set number
@@ -121,12 +126,9 @@ set backspace=2
 set scrolloff=4
 set splitbelow
 set laststatus=0
-set cmdheight=1 " gui
 set rulerformat=%40(%=%t%m%r%h%w\ \|\ %{&fileencoding}\ %{&fileformat}\ \|\ %P%)
 set list | set listchars=tab:\|\ ,extends:»,precedes:«,nbsp:%
-set expandtab
-set shiftwidth=4   " tab width at bol.
-set tabstop=4      " tab width other than bol.
+set expandtab | set tabstop=4 | set shiftwidth=4
 set encoding=utf-8
 set fileencodings=utf-8,cp932,euc-jp
 set fileformats=unix,dos
@@ -135,24 +137,20 @@ set clipboard& | set clipboard^=unnamedplus
 let mapleader = ','
 let maplocalleader = '\'
 
-"let &t_EI .= '\ePtmux;\e[<0t\e\\'
-"set ttimeoutlen=100
-
 " remove trailing whitespace
 autocmd BufWritePre * :%s/\s\+$//ge
 
-" discreet showmatch paren
-hi MatchParen cterm=NONE ctermbg=DarkGray ctermfg=NONE
-
-" discreet special chars
-" eol, extends, precedes
-hi NonText    ctermbg=NONE ctermfg=59 guibg=NONE guifg=NONE
-" nbsp, tab, trail
-hi SpecialKey ctermbg=NONE ctermfg=59 guibg=NONE guifg=NONE
-
 " highlight current line when insert mode
-autocmd InsertEnter,InsertLeave * set cursorline!
+autocmd! InsertEnter,InsertLeave * set cursorline!
 highlight CursorLine cterm=NONE ctermbg=Black
+
+" highlight
+highlight LineNr     ctermfg=240 guifg=#545454
+highlight MatchParen ctermbg=DarkGray
+highlight NonText    ctermfg=59
+highlight SpecialKey ctermfg=59
+highlight ALEWarning ctermbg=Brown
+highlight ALEError   ctermbg=DarkRed
 
 " black hole
 noremap  c  "_c
@@ -209,13 +207,15 @@ autocmd BufNewFile,BufRead *.clj   nnoremap mc :IcedConnect<CR>
 autocmd BufNewFile,BufRead *.cljs  nnoremap mc :IcedConnect<CR>
 autocmd BufNewFile,BufRead *.cljc  nnoremap mc :IcedConnect<CR>
 
-
 " space
 nnoremap <Space>@  gg=G<C-o><C-o>
 nnoremap <Space>0  :noh<CR>
 nnoremap <Space>1  :only<CR>
 nnoremap <Space>-  :split<CR>
 nnoremap <Space>^  :vsplit<CR>
+nnoremap <Space>e  :browse confirm e<CR>
+nnoremap <Space>w  :browse confirm saveas<CR>
+
 nnoremap <Space>:  :FzfCommands<CR>
 nnoremap <Space>;  :FzfBuffers<CR>
 nnoremap <Space>f  :FzfFiles<CR>
@@ -233,13 +233,14 @@ command SaveWithUtf8    :set fenc=utf-8<CR>:w<CR>
 " autocmd
 autocmd BufNewFile,BufRead *.bb  setl filetype=clojure
 autocmd BufNewFile,BufRead *.cmd setl filetype=ps1 fileencodings=cp932
-
 autocmd FileType scheme vnoremap <Leader>e :!gosh_send %V
 
-" function! CursorChar()
-"   return getline('.')[col('.')-1]
-" endfunction
-
-" function! RemovePaired()
-"   if CursorChar() = '('
-" endfunction
+" gvim
+if has('gui_running')
+    set lines=26 | set columns=94
+    set cmdheight=1
+    set guioptions-=T
+    if has('win32') || has('win64')
+        set guifont=HackGen_Console:h12:cSHIFTJIS:qDRAFT " :echo &guifont
+    endif
+endif
