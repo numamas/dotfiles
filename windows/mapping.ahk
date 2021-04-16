@@ -20,7 +20,7 @@ vk1D & F11:: Send, {Volume_Down}
 vk1D & F12:: Send, {Volume_Up}
 
 vk1D & Q:: Send, !{Space}n
-vk1D & R:: Run, "powershell.exe" /c %A_ScriptDir%\fzfwindow.ps1, , Hide
+;vk1D & R:: Run, "powershell.exe" /c %A_ScriptDir%\fzfwindow.ps1, , Hide
 ;vk1D & ^:: Run, DisplaySwitch.exe /internal
 
 F3::
@@ -39,7 +39,7 @@ F3::
     KeyWait, %key%
     Return
 
-#IfWinActive ahk_exe mintty.exe Code.exe
+#IfWinActive ahk_exe mintty.exe ahk_exe Code.exe
     ^c::
         Send, ^c
         IME_SET(0)
