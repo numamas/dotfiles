@@ -15,16 +15,29 @@ vk1D & @:: Send, {'}
 vk1D & vkBA:: Send, {&}  ; colon
 vk1D & vkBB:: Send, {|}  ; semicolon
 
-;vk1D & ^:: Run, DisplaySwitch.exe /internal
-vk1D & ^:: Run, "pwsh.ps1" -h
-
 vk1D & F10:: Send, {Volume_Mute}
 vk1D & F11:: Send, {Volume_Down}
 vk1D & F12:: Send, {Volume_Up}
 
 vk1D & Q:: Send, !{Space}n
 vk1D & R:: Run, "powershell.exe" /c %A_ScriptDir%\fzfwindow.ps1, , Hide
-vk1D & Insert:: Run, "cmd.exe" /c "cd %SYSTEMDRIVE%\data\download & pwsh"
+;vk1D & ^:: Run, DisplaySwitch.exe /internal
+
+F3::
+    ;; https://pouhon.net/ahk-keywait/2848/
+    ;; http://ahkwiki.net/SampleCodes
+    key := "F3"
+    KeyWait, %key%, T0.1
+    KeyWait, %key%, D, T0.1
+    if (ErrorLevel) {
+        ;; short single press
+        Run, gvim.exe
+    } else {
+        ;; double press
+        Run, "pwsh.ps1" -h
+    }
+    KeyWait, %key%
+    Return
 
 #IfWinActive ahk_exe mintty.exe Code.exe
     ^c::
@@ -40,6 +53,7 @@ vk1D & Insert:: Run, "cmd.exe" /c "cd %SYSTEMDRIVE%\data\download & pwsh"
 #IfWinActive ahk_exe chrome.exe
     vk1D & D:: Send, {RButton}, k, {RButton}, v
 #IfWinActive
+
 
 IME_SET(setSts, WinTitle="")
 {
