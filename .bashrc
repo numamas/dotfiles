@@ -3,6 +3,7 @@
 #region: export
 export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 export PROMPT_DIRTRIM=3
+
 export PATH=`cat - << EOS | xargs -I{} echo -n '{}:' && echo -n $PATH
 $HOME/bin
 $HOME/script
@@ -13,10 +14,19 @@ $HOME/.local/bin
 $HOME/.vim/plugged/vim-iced/bin
 EOS
 `
-
 # clipboard sharing
 if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
     export DISPLAY=localhost:0.0
+fi
+
+# read proxy config
+if [ -f "$HOME/config/proxy" ]; then
+    source "$HOME/config/proxy"
+fi
+
+# enable homebrew
+if [ -f '/home/linuxbrew/.linuxbrew/bin/brew' ]; then
+    eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 fi
 
 # misc
@@ -214,7 +224,7 @@ brew_install() {
 setup_bin() {
     # essential
     apt_install build-essential curl colordiff fzf git ripgrep vim-gtk xsel
-    brew_install bat exa
+    brew_install bat exa node yarn
 
     # common lisp
     # https://moremagic.hateblo.jp/entry/2018/06/16/095231
@@ -226,9 +236,15 @@ setup_bin() {
 
     # go
     brew_install go
+    go get -u golang.org/x/tools/cmd/gopls
+    go get -u golang.org/x/tools/cmd/goimports
 
-    # erlang
-    brew_install erlang
+    # typescript
+    brew_install typescript
+
+    # others
+    # brew_install erlang
+    # brew_install nim
 }
 
 setup_brew() {
