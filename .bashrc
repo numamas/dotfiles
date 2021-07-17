@@ -1,19 +1,5 @@
 # vim: filetype=sh foldmethod=marker foldmarker=#region,#endregion :
 
-#region: WSL
-if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
-    # clipboard sharing
-    export DISPLAY=localhost:0.0
-
-    # virtualbox
-    startvm() {
-        name="$1"; port="$2"; user="$3"
-        VBoxManage.exe startvm "$name" --type headless 2> /dev/null
-        ssh -Y -p $port $user@localhost
-    }
-fi
-#endregion
-
 #region: export
 export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 export PROMPT_DIRTRIM=3
@@ -89,7 +75,9 @@ alias b='_babashka_facilitated'
 alias c='xsel -b'
 alias f='fzf'
 alias t='_tmux_newpane_or_newwindow'
-alias v='t vim'
+
+alias vi='vim -u NONE -N'
+alias em='emacs -nw'
 
 # clojure
 alias clj-new='clj -Sdeps "{:deps {seancorfield/clj-new {:mvn/version \"1.1.216\"}}}" -m clj-new.create' # clj-new app <myname/myapp>
@@ -147,6 +135,25 @@ export FZF_CTRL_T_COMMAND="rg --files --hidden --follow --glob '!.git/*' 2> /dev
 export FZF_CTRL_T_OPTS="--preview '$FZF_PREVIEW'"
 export FZF_ALT_C_COMMAND="find -type d | sed -e 's/^\.\///'"
 export FZF_ALT_C_OPTS="--preview '$FZF_PREVIEW'"
+#endregion
+
+#region: WSL
+if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+    # clipboard sharing
+    export DISPLAY=localhost:0.0
+    export config=$HOME/shared/config
+
+    if [ -f "$config/wsl" ]; then
+        source "$config/wsl"
+    fi
+
+    # virtualbox
+    startvm() {
+        name="$1"; port="$2"; user="$3"
+        VBoxManage.exe startvm "$name" --type headless 2> /dev/null
+        ssh -Y -p $port $user@localhost
+    }
+fi
 #endregion
 
 #region: clojure
