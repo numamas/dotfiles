@@ -6,6 +6,7 @@ if filereadable( expand('~/.vim/autoload/plug.vim') )
 
     Plug 'felipesousa/rupza', { 'do': 'cp colors/* ~/.vim/colors/' }
     Plug 'sheerun/vim-polyglot'
+
     Plug 'jremmen/vim-ripgrep'
     Plug 'tpope/vim-surround'
     Plug 'tpope/vim-repeat'
@@ -89,6 +90,7 @@ if filereadable( expand('~/.vim/autoload/plug.vim') )
     Plug 'mattn/vim-goimports', { 'for': 'go' }  " gofmt, goimports
 
     " test
+    Plug 'ollykel/v-vim'
     Plug 'alaviss/nim.nvim'
     call plug#end()
 endif
@@ -113,6 +115,7 @@ endif
 
 language C
 set number
+set relativenumber
 set nowrap
 set hlsearch
 set incsearch
@@ -125,8 +128,8 @@ set modeline
 set backspace=2
 set scrolloff=4
 set splitbelow
-set laststatus=0
-set rulerformat=%40(%=%t%m%r%h%w\ \|\ %{&fileencoding}\ %{&fileformat}\ \|\ %P%)
+" set laststatus=0 | set rulerformat=%40(%=%t%m%r%h%w\ \|\ %{&fileencoding}\ %{&fileformat}\ \|\ %P%)
+set laststatus=2 | set rulerformat=%20(%=\|\ %{&fileencoding}\ %{&fileformat}\ \|\ %P%)
 set list | set listchars=tab:\|\ ,extends:»,precedes:«,nbsp:%
 set expandtab | set tabstop=4 | set shiftwidth=4
 set encoding=utf-8
@@ -178,6 +181,7 @@ nnoremap <      <<
 vnoremap >      >gv
 vnoremap <      <gv
 map      s      <Plug>(easymotion-s2)
+map      S      <Plug>(easymotion-sn)
 nmap     <C-_>  <Plug>CommentaryLine " C-/ only works on tmux.
 vmap     <C-_>  <Plug>Commentary
 imap     <C-_>  <C-o><Plug>CommentaryLine
@@ -241,6 +245,7 @@ if has('gui_running')
     set lines=26 | set columns=94
     set cmdheight=1
     set guioptions-=T
+    set laststatus=1
     if has('win32') || has('win64')
         set guifont=HackGen_Console:h12:cSHIFTJIS:qDRAFT " :echo &guifont
     endif
