@@ -1,8 +1,8 @@
 ;;; -*- lexical-binding: t -*-
 
 (progn :emacs
+  (defalias 'yes-or-no-p 'y-or-n-p)
   (load-theme 'wombat t)
-  (defalias 'yes-or-nop 'y-or-n-p)
   (menu-bar-mode -1)
   (column-number-mode)
   (global-display-line-numbers-mode)
@@ -19,6 +19,7 @@
         custom-file (locate-user-emacs-file "custom.el"))
   (setq display-line-numbers-width-start t)
   (setq show-paren-delay 0)
+  (setq vc-follow-symlinks t)
   ;; (load custom-file)
   ;; (setq lisp-indent-function 'common-lisp-indent-function) ;; malfunction
   (put 'progn 'lisp-indent-function 'defun)
@@ -66,6 +67,7 @@
 
 (use-package general
   :init
+  ;; q / g / @
   (general-define-key
     "C-_" #'evilnc-comment-or-uncomment-lines
     "C-q" #'winner-undo
@@ -104,9 +106,11 @@
     "SPC r" #'counsel-recentf
     "SPC s" #'swiper
     "SPC w" #'toggle-truncate-lines
+    "SPC e e" #'set-buffer-file-coding-system
+    "SPC e r" #'revert-buffer
+    "SPC e t" #'counsel-major
     "SPC q e" (lambda () (interactive) (find-file (expand-file-name "~/.emacs.el")))
-    "SPC q r" (lambda () (interactive) (load-file (expand-file-name "~/.emacs.el"))))
-  )
+    "SPC q r" (lambda () (interactive) (load-file (expand-file-name "~/.emacs.el")))))
 
 (use-package diminish
   :init
@@ -218,6 +222,13 @@
 (use-package evil-snipe
   :init
   (evil-snipe-override-mode))
+
+(use-package tree-sitter
+  :hook ((tree-sitter-after-on-hook . tree-sitter-hl-mode))
+  :init
+  (use-package tree-sitter-langs)
+  :config
+  (global-tree-sitter-mode))
 
 (use-package eglot
   :diminish eldoc-mode
