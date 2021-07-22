@@ -1,0 +1,17 @@
+#!/bin/bash
+
+apt_install() {
+    for x in "$@"; do
+        printf "  [apt]  %-20s " "$x"
+        if ! dpkg -L "$x" > /dev/null 2>&1; then
+            sudo -E apt install -y "$x" > /tmp/setup.log 2>&1
+            if [ $? -ne 0 ]; then
+                printf '\033[31m failed \033[m\n'
+                return 1
+            fi
+            printf '\033[32m done \033[m\n'
+        else
+            echo ' already installed '
+        fi
+    done
+}

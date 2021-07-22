@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if ! type VBoxClient > /dev/null 2>&1; then
+    echo -n '  VirtualBox Version (6.1.4): '
+    read input
+    if [ "$input" == "" ]; then
+        input='6.1.4'
+    fi
+
+    wget "http://download.virtualbox.org/virtualbox/${input}/VBoxGuestAdditions_${input}.iso" \
+        && sudo mount -t iso9660 -o loop "VBoxGuestAdditions_${input}.iso" /mnt \
+        && sudo /mnt/VBoxLinuxAdditions.run \
+        && sudo umount /mnt \
+        && rm "./VBoxGuestAdditions_${input}.iso"
+fi
+
+if ! groups $(whoami) | grep -q 'vboxsf'; then
+    sudo gpasswd -a $(whoami) vboxsf
+fi

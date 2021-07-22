@@ -1,0 +1,17 @@
+#!/bin/bash
+
+local list=`brew list --formula`
+for x in "$@"; do
+    local name=`echo $x | awk -F'/' '{print $NF}'`
+    printf "  [brew] %-20s " "$name"
+    if ! echo $list | grep -q "\b$name\b"; then
+        brew install "$x" > /tmp/setup.log 2>&1
+        if [ $? -ne 0 ]; then
+            printf '\033[31m failed \033[m\n'
+            return 1
+        fi
+        printf '\033[32m done \033[m\n'
+    else
+        echo ' already installed '
+    fi
+done

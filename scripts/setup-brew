@@ -1,0 +1,11 @@
+#!/bin/bash
+
+local brew='/home/linuxbrew/.linuxbrew/bin/brew'
+if [ ! -f "$brew" ]; then
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+fi
+eval $($brew shellenv)
+echo "eval \$($brew shellenv)" | _blockinfile "$HOME/.profile" "# Homebrew"
