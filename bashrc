@@ -25,10 +25,11 @@ _main () {
 _defalias cat bat
     alias b='_babashka_facilitated'
     alias t='_tmux_newpane_or_newwindow'
+    alias reload="source $HOME/.bashrc"
 
     _defalias clip xsel '-b'
     _defalias diff colordiff '-u' || _defalias diff delta
-    _defalias em emacs '-nw'
+    _defalias em emacsclient '-a "" -nw bashrc'
     _defalias ls exa '--git'
     _defalias lt exa '-TL2'
     _defalias vi vim '-u NONE -N'
