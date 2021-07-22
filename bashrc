@@ -1,5 +1,42 @@
 # vim: filetype=sh foldmethod=marker foldmarker=#region,#endregion :
 
+SCRIPT_PATH=$(readlink ${BASH_SOURCE:-$0} || echo ${BASH_SOURCE:-$0})
+SCRIPT_DIR=$(cd $(dirname $SCRIPT_PATH); pwd)
+
+# Table of symlinks
+declare -A link_table=(
+    ['config/emacs.el']='$HOME/.emacs.el'
+    ['config/tmux.conf']='$HOME/.tmux.conf'
+    ['config/vimrc']='$HOME/.vimrc'
+)
+
+slink () {
+    local opts=''
+    if [ "$1" = "-f" ]; then
+        opts="-f"
+    fi
+    for key in ${!link_table[@]}; do
+        echosh ln -s $opts "$SCRIPT_DIR/$key" $(eval echo "${link_table[$key]}")
+    done
+}
+
+dump () {
+    echo 'dump'
+}
+
+template () {
+    echo 'template TEPLATE_NAME DIR_NAME'
+}
+
+config () {
+    echo 'config NAME'
+}
+
+echosh () {
+    echo "$*"
+    eval "$*"
+}
+
 #region: export
 export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 export PROMPT_DIRTRIM=3
