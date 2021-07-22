@@ -42,7 +42,12 @@ _defalias cat bat
 
     # export
     export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+    export PROMPT_COMMAND='set_tmux_pwd;'
     export PROMPT_DIRTRIM=3
+
+    set_tmux_pwd () {
+        [ -n "$TMUX" ] && tmux setenv TMUXPWD_$(tmux display -p "#I") $PWD
+    }
 
     export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
@@ -69,10 +74,10 @@ _main_wsl () {
         export config=$HOME/shared/config
 
         # Prompt
-        export PROMPT_COMMAND='path_color'
+        export PROMPT_COMMAND="${PROMPT_COMMAND}wsl_path_color;"
         export PS1="${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[\$(echo -n \$PATH_COLOR)m\]\w\[\033[00m\]\$ "
 
-        path_color() {
+        wsl_path_color() {
             if [[ "$(pwd)" =~ /mnt/([a-z]|[a-z]/.*) ]]; then
                 # Windows
                 PATH_COLOR='01;35'
