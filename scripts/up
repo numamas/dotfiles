@@ -1,0 +1,50 @@
+#!/bin/bash
+# vim: foldmethod=marker foldmarker={,} :
+set -eu -o pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOURCE:-$0}")")"; pwd)
+ROOT="$SCRIPT_DIR/.."
+
+exe() {
+    echo "$*"; "$@"
+}
+
+exists() {
+    type "$1" > /dev/null 2>&1
+}
+
+
+__default__() {
+    __link__ && __tea__
+}
+
+__app__() {
+    :
+    # curl git build-essential nnn xsel tmux
+}
+
+__clean__() {
+	exe rm -rf "$HOME/.vim"
+    exe rm -rf "$HOME/.local/share/nvim"
+    exe rm -rf "$HOME/.config/nvim"
+}
+
+__copy__() {
+    local copydir="$HOME/shared/copy"
+    exe mkdir -p "$copydir"
+    exe cp "$ROOT/init.lua" "$copydir/"
+}
+
+__link__() {
+    exe mkdir -p "$HOME/.config/nvim"
+    exe ln -sf "$ROOT/bashrc"    "$HOME/.bashrc"
+    exe ln -sf "$ROOT/init.lua"  "$HOME/.config/nvim/init.lua"
+    exe ln -sf "$ROOT/inputrc"   "$HOME/.inputrc"
+    exe ln -sf "$ROOT/tmux.conf" "$HOME/.tmux.conf"
+}
+
+__tea__() {
+    exists tea || sh <(curl tea.xyz)
+}
+
+eval "__${1:-default}__"

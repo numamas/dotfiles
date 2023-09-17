@@ -1,0 +1,24 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Keyboard Layout]
+"Scancode Map"=hex:00,00,00,00,00,00,00,00,03,00,00,00,1d,00,3a,00,36,00,79,00,00,00,00,00
+
+;; 00 00 00 00 : Version
+;; 00 00 00 00 : Flags
+;; 03 00 00 00 : Entry count
+;; 1d 00 3a 00 : Ctrl_L 0x001D <- CapsLock 0x003A
+;; 36 00 79 00 : Shift_R 0x0036 <- Henakan 0x0079
+;; 00 00 00 00 : Null termination
+;; Scancodes: https://bsakatu.net/doc/scancode
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\Keyboard Response]
+"AutoRepeatDelay"="300"
+"AutoRepeatRate"="30"
+"DelayBeforeAcceptance"="0"
+"Flags"="59"
+
+[HKEY_CURRENT_USER\Control Panel\Mous]
+"MouseSensitivity"="8"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
