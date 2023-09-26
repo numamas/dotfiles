@@ -184,6 +184,12 @@ set 'options' {
 
 set 'mapping' {
     function()
+        -- disable increment and decrement
+        set.keymap('*') {
+            '<C-a>', [[<Nop>]],
+            '<C-x>', [[<Nop>]],
+        }
+
         -- use blackhole register
         set.keymap('*') {
             'c', [["_c]],
@@ -194,10 +200,9 @@ set 'mapping' {
             'p', [["_dP]],
         }
 
-        -- disable increment and decrement
-        set.keymap('*') {
-            '<C-a>', [[<Nop>]],
-            '<C-x>', [[<Nop>]],
+        -- paste (gui)
+        set.keymap("*!") {
+            '<S-Insert>', [[<C-R>+]]
         }
 
         -- move cursor based on logical lines
