@@ -64,6 +64,51 @@ SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOUR
         unset READLINE_POINT_TEMP
     }
 
+    # cd_stack
+    PROMPT_COMMAND="$PROMPT_COMMAND; __cd_stack_push__"
+
+    __cd_stack_push__() {
+        if [ -z "${CD_STACK:-}" ]; then
+            CD_STACK_POS=0
+            CD_STACK[$CD_STACK_POS]="$PWD"
+        fi
+        if [ "$PWD" != "${CD_STACK[$CD_STACK_POS]}" ]; then
+            CD_STACK_POS=$((CD_STACK_POS + 1))
+            CD_STACK[$CD_STACK_POS]="$PWD"
+
+            # remove padding
+            for ((i = $((CD_STACK_POS + 1)); i < ${#CD_STACK[@]}; i++)); do
+                unset "CD_STACK[$i]"
+            done
+            CD_STACK=("${CD_STACK[@]}")
+        fi
+    }
+
+    __cd_stack_move__() {
+        local index="$1"
+        local size="${#CD_STACK[@]}"
+
+        if [ "$index" -lt 0 ] || [ "$index" -gt $((size - 1)) ]; then
+            # echo 'No newer or older entry exists.' > /dev/stderr
+            return
+        fi
+
+        CD_STACK_POS="$index"
+        local dest="${CD_STACK[$CD_STACK_POS]}"
+        if [ -n "$dest" ]; then
+            cd "$dest" || return
+        fi
+    }
+
+    __cd_stack_next__() {
+        __cd_stack_move__ $((CD_STACK_POS + 1))
+    }
+
+    __cd_stack_prev__() {
+        __cd_stack_move__ $((CD_STACK_POS - 1))
+    }
+
+
     if [ -t 1 ]; then
         bind -x '"\C-x1": readline_dismiss' 2>/dev/null
         bind -x '"\C-x0": readline_restore' 2>/dev/null
@@ -72,12 +117,12 @@ SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOUR
         bind -x '"\C-x2": cd ..'              2>/dev/null
         bind '"\e[1;3A": "\C-x1\C-x2\n\C-x0"' 2>/dev/null
 
-        # Alt + Left : move back cd history
-        bind -x '"\C-x3": cd_history_prev'    2>/dev/null
+        # Alt + Left : move backward cd history
+        bind -x '"\C-x3": __cd_stack_prev__'  2>/dev/null
         bind '"\e[1;3D": "\C-x1\C-x3\n\C-x0"' 2>/dev/null
 
         # Alt + Right : move forward cd history
-        bind -x '"\C-x4": cd_history_next'    2>/dev/null
+        bind -x '"\C-x4": __cd_stack_next__'  2>/dev/null
         bind '"\e[1;3C": "\C-x1\C-x4\n\C-x0"' 2>/dev/null
     fi
 
@@ -106,6 +151,56 @@ SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOUR
         bind -x '"\C-k": __xsel_kill__'    2>/dev/null
         bind -x '"\C-y": __xsel_yank__'    2>/dev/null
     fi
+}
+
+: 'z' && {
+    Z_FILE="$HOME/.zfile"
+    Z_FILE_MAX=500
+
+    __z_var__() {
+        echo "containts"
+        echo "  Z_FILE = $Z_FILE"
+        echo "  Z_FILE_MAX = $Z_FILE_MAX"
+        echo "veriables"
+        echo "  #Z_DATA_NEW = ${#Z_DATA_NEW[@]}"
+        echo "  #Z_DATA_LOADED = ${#Z_DATA_LOADED[@]}"
+    }
+
+    __z_init__() {
+        if [ ! -f "$Z_FILE" ]; then
+            "$Z_FILE not found"
+            touch "$Z_FILE"
+            return
+        fi
+        mapfile -t Z_DATA_LOADED < <(tac "$Z_FILE" | __z_refine__ | tac | tail -n "$Z_FILE_MAX")
+
+        # update $Z_FILE
+        (IFS=$'\n'; echo "${Z_DATA_LOADED[*]}") > "$Z_FILE"
+    }
+
+    __z_add__() {
+        if [ -z "${Z_DATA_NEW:-}" ] || [ "$PWD" != "${Z_DATA_NEW[-1]}" ]; then
+            Z_DATA_NEW+=("$PWD")
+        fi
+    }
+
+    __z_save__() {
+        (IFS=$'\n'; echo "${Z_DATA_NEW[*]}") >> "$Z_FILE"
+    }
+
+    __z_show__() {
+        (IFS=$'\n'; echo "${Z_DATA_LOADED[*]}"; echo "${Z_DATA_NEW[*]}") | tac | __z_refine__
+    }
+
+    __z_refine__() {
+        grep -xv '/' | grep -xv '' | awk '!a[$0]++'
+    }
+
+    __z_init__
+
+    alias z='cd "$(__z_show__ | fzf)"'
+    PROMPT_COMMAND="$PROMPT_COMMAND; __z_add__"
+    EXIT_TRAP_COMMAND="$EXIT_TRAP_COMMAND; __z_save__"
 }
 
 : 'config: fzf' && {
