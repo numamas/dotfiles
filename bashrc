@@ -157,15 +157,6 @@ SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOUR
     Z_FILE="$HOME/.zfile"
     Z_FILE_MAX=500
 
-    __z_var__() {
-        echo "containts"
-        echo "  Z_FILE = $Z_FILE"
-        echo "  Z_FILE_MAX = $Z_FILE_MAX"
-        echo "veriables"
-        echo "  #Z_DATA_NEW = ${#Z_DATA_NEW[@]}"
-        echo "  #Z_DATA_LOADED = ${#Z_DATA_LOADED[@]}"
-    }
-
     __z_init__() {
         if [ ! -f "$Z_FILE" ]; then
             "$Z_FILE not found"
