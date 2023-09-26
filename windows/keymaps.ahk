@@ -1,6 +1,17 @@
 ﻿;; vim: foldmethod=marker foldmarker={,} :
 SendMode, Input
 
+ F20:: Send, é
++F20:: Send, É 
+ F21:: Send, ä
++F21:: Send, Ä
+ F22:: Send, ü
++F22:: Send, Ü
+ F23:: Send, ö
++F23:: Send, Ö
+ F24:: Send, ß
++F24:: Send, é
+
 ;; Alt {
 LAlt & Q:: Send, #1
 LAlt & W:: Send, #2
