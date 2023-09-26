@@ -635,6 +635,8 @@ plugin 'nvim-autopairs' {
 
             -- shell
             { rule('then', 'fi', 'sh') :end_wise(cond.starts_with('if')) },
+            { rule('do', 'done', 'sh') :end_wise(cond.starts_with('for')) },
+            { rule('in', 'esac', 'sh') :end_wise(cond.starts_with('case')) },
         }
     end,
 }
