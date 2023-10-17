@@ -20,22 +20,54 @@ SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOUR
         # export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0.0
     fi
 
-    # prompt
-    export PS1="${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[\$(echo -n \$PATH_COLOR)m\]\w\[\033[00m\]\$ "
-    export PROMPT_DIRTRIM=3
-    export PROMPT_COMMAND="$PROMPT_COMMAND; set_path_color"
+    # check if DISPLAY is valid
+    if ! xsel -o > /dev/null 2>&1; then
+        unset DISPLAY
+    fi
 
-    set_path_color() {
-        if [[ "$(pwd)" =~ /mnt/([a-z]|[a-z]/.*) ]]; then
-            PATH_COLOR='01;35' # Windows
+    # prompt
+    export PROMPT_DIRTRIM=3
+    export PROMPT_COMMAND="__set_prompt__; $PROMPT_COMMAND"
+
+    __set_prompt__() {
+        local exit="$?" # should be first
+        local reset='\[\033[00m\]'
+        local green='\[\033[01;32m\]'
+        local yellow='\[\033[01;33m\]'
+
+        # shellcheck disable=2155
+        export PS1="${green}\u@\h${reset}:$(__path_color__)\w${reset}${yellow}$(__git_branch__)${reset} $(__exit_code_color__ $exit)\$${reset} "
+    }
+
+    __exit_code_color__() {
+        if [ "$1" -eq 0 ]; then
+            printf '\[\033[00m\]'
         else
-            PATH_COLOR='01;34' # Linux
+            printf '\[\033[01;31m\]'
+        fi
+    }
+
+    __path_color__() {
+        if [[ "$(pwd)" =~ /mnt/([a-z]|[a-z]/.*) ]]; then
+            printf '\[\033[01;35m\]' # Windows (magenta)
+        else
+            printf '\[\033[01;34m\]' # Linux (blue)
+        fi
+    }
+
+    __git_branch__() {
+        local branch
+        branch="$(git rev-parse --abbrev-ref HEAD 2> /dev/null)"
+        # shellcheck disable=2181
+        if [ "$?" -eq 0 ]; then
+            echo -n " ($branch)"
+        else
+            echo -n ''
         fi
     }
 }
 
 : 'path' && {
-    # path
     declare -a path_list=(
         "$SCRIPT_DIR/bin"
         "$SCRIPT_DIR/scripts"
@@ -47,6 +79,41 @@ SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOUR
     )
     # shellcheck disable=2155
     export PATH="$(IFS=$':'; echo "${path_list[*]}"):$PATH"
+}
+
+: 'proxy' && {
+    disable_proxy() {
+        unset http_proxy
+        unset https_proxy
+        unset ftp_proxy
+        unset no_proxy
+        unset HTTP_PROXY
+        unset HTTPS_PROXY
+        unset FTP_PROXY
+        unset NO_RPOXY
+    }
+
+    enable_proxy() {
+        if [ -z "${PROXY_ADDR:-}" ] || [ -z "${PROXY_PORT:-}" ]; then
+            return 0
+        fi
+        
+        if [ -z "${PROXY_USER:-}" ] || [ -z "${PROXY_PASS:-}" ]; then
+            local proxy="http://$PROXY_ADDR:$PROXY_PORT"
+        else
+            local proxy="http://$PROXY_USER:$PROXY_PASS@$PROXY_ADDR:$PROXY_PORT"
+        fi
+
+        export http_proxy="$proxy"
+        export https_proxy="$proxy"
+        export ftp_proxy=""
+        export no_proxy="localhost,127.0.0.0/8,::1"
+
+        export HTTP_PROXY="$http_proxy"
+        export HTTPS_PROXY="$https_proxy"
+        export FTP_PROXY="$ftp_proxy"
+        export NO_RPOXY=$no_proxy
+    }
 }
 
 : 'keymaps' && {
@@ -312,6 +379,8 @@ SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOUR
 
 # shellcheck disable=2064
 trap "$EXIT_TRAP_COMMAND" EXIT SIGHUP SIGQUIT SIGTERM
+
+enable_proxy
 
 : 'start tmux' && {
     export PROMPT_COMMAND="$PROMPT_COMMAND; tmux_set_pwd"

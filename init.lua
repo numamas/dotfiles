@@ -1,3 +1,7 @@
+-- TODO
+-- https://github.com/tom-anders/telescope-vim-bookmarks.nvim
+-- https://github.com/MattesGroeger/vim-bookmarks
+
 local AUGROUP = vim.api.nvim_create_augroup('user_config', { clear = true })
 
 local util = {
@@ -95,9 +99,6 @@ local set = {
                     if mode == '*' then
                         mode = ''
                     end
-                    if mode == 'i' then
-                        rhs = '<C-o>' .. rhs
-                    end
                     -- When rhs contains '<Plug>', 'noremap' option turns false automatically.
                     vim.keymap.set(mode, lhs, rhs, vim.tbl_deep_extend('keep', opts, { silent = true }))
                 end
@@ -113,8 +114,6 @@ local set = {
         end
     end,
 }
-
-setmetatable(set, { __call = set.section })
 
 local plugin = {
     list = {},
@@ -138,7 +137,7 @@ local plugin = {
 
 setmetatable(plugin, { __call = plugin.register })
 
-set 'options' {
+set.section 'options' {
     function()
         vim.cmd.language 'C'
         vim.o.fileencodings = 'utf-8,cp932,utf-16le,euc-jp'
@@ -171,9 +170,11 @@ set 'options' {
         -- inhibit automatic commentstring insertion
         set.autocmd('BufEnter') { command = 'setlocal formatoptions-=ro' }
         -- highlight curosline only in insert mode
-        set.highlight('CursorLine') [[ctermfg=NONE ctermbg=NONE cterm=underline guifg=NONE guibg=NONE gui=underline]]
+        set.highlight('CursorLine') [[ctermfg=NONE ctermbg=0 cterm=NONE guifg=NONE guibg=#15171c gui=NONE]]
         set.autocmd('InsertEnter') { command = 'setlocal cursorline' }
         set.autocmd('InsertLeave') { command = 'setlocal nocursorline' }
+        -- disable startup message
+        vim.opt.shortmess:append('I')
         -- gui support
         if vim.g.nvy then
             vim.o.title = true
@@ -182,7 +183,7 @@ set 'options' {
     end
 }
 
-set 'mapping' {
+set.section 'mapping' {
     function()
         -- disable increment and decrement
         set.keymap('*') {
@@ -280,7 +281,7 @@ plugin 'vim-indent-object' {
 
 if vim.g.vscode then goto exit end
 
-set 'clipboard' {
+set.section 'clipboard' {
     function()
         -- automatic detection of clipboard method takes a little time because it calls `excutable` many times.
         -- share/nvim/runtime/autoload/provider/clipboard.vim: provider#clipboard#Executable()
@@ -314,7 +315,7 @@ set 'clipboard' {
     end
 }
 
-set 'diff' {
+set.section 'diff' {
     function()
         vim.opt.fillchars:append('diff: ')
 
@@ -335,7 +336,7 @@ set 'diff' {
     end
 }
 
-set 'filetypes' {
+set.section 'filetypes' {
     function()
         set.autocmd('FileType', 'autohotkey') { command = 'setlocal commentstring=;;%s' }
 
@@ -352,6 +353,12 @@ set 'filetypes' {
             end
         }
 
+        set.autocmd('FileType', 'sh') {
+            callback = function()
+                vim.bo.expandtab = false
+            end
+        }
+
         -- xml
         set.autocmd('BufRead', '*.scl') { command = 'setlocal filetype=xml' }
         set.autocmd('BufRead', '*.scd') { command = 'setlocal filetype=xml' }
@@ -360,7 +367,7 @@ set 'filetypes' {
     end
 }
 
-set 'occur' {
+set.section 'occur' {
     function()
         function _G.occur()
             local org_efm = vim.bo.errorformat
@@ -399,7 +406,7 @@ set 'occur' {
     end
 }
 
-set 'ruler' {
+set.section 'ruler' {
     function()
         vim.o.laststatus = 1
         vim.o.rulerformat = '%70(%= %{v:lua.ruler_diagnostics()} %{v:lua.ruler_lsp_servers()} %#TabLine#  %{v:lua.ruler_fileinfo()} %P  %)'
@@ -466,7 +473,7 @@ set 'ruler' {
     end
 }
 
-set 'tmux-navigate' {
+set.section 'tmux-navigate' {
     function()
         function _G.tmux_navigate(direction) -- direction = 'k' | 'j' | 'h' | 'l'
             local nr = vim.fn.winnr()
@@ -476,13 +483,33 @@ set 'tmux-navigate' {
             end
         end
 
-        set.keymap('n') {
+        set.keymap('nixt') {
             '<A-k>', [[<Cmd>call v:lua.tmux_navigate('k')<CR>]],
             '<A-j>', [[<Cmd>call v:lua.tmux_navigate('j')<CR>]],
             '<A-h>', [[<Cmd>call v:lua.tmux_navigate('h')<CR>]],
             '<A-l>', [[<Cmd>call v:lua.tmux_navigate('l')<CR>]],
         }
     end
+}
+
+plugin 'zephyr' {
+    'glepnir/zephyr-nvim',
+    priority = 1000,
+    config = function()
+        vim.o.background = 'dark'
+        vim.o.termguicolors = true
+        vim.cmd.colorscheme 'zephyr'
+
+        set.highlight('Visual')     [[guifg=NONE guibg=#2d3f76]]
+        set.highlight('Search')     [[guifg=#c8d3f5 guibg=#3e68d7]]
+        set.highlight('CurSearch')  [[guifg=#1b1d2b guibg=#ff966c]]
+        set.highlight('IncSearch')  [[guifg=#1b1d2b guibg=#ff966c]]
+
+        set.highlight('DiffAdd')    [[ctermfg=NONE ctermbg=22  guifg=NONE guibg=#394634 term=bold]]
+        set.highlight('DiffChange') [[ctermfg=NONE ctermbg=17  guifg=NONE guibg=#354257 term=bold]]
+        set.highlight('DiffDelete') [[ctermfg=NONE ctermbg=0   guifg=NONE guibg=#000000 term=bold]]
+        set.highlight('DiffText')   [[ctermfg=NONE ctermbg=110 guifg=NONE guibg=#37636e term=reverse]]
+    end,
 }
 
 plugin 'capture.vim' {
@@ -546,12 +573,14 @@ plugin 'bufferline.nvim' {
 
 plugin 'git-confilict.nvim' {
     'akinsho/git-conflict.nvim', version = "*",
+    event = 'VeryLazy',
     config = true,
 }
 
 plugin 'gitsigns.nvim' {
     'lewis6991/gitsigns.nvim',
     dependencies = { 'nvim-lua/plenary.nvim' },
+    event = 'VeryLazy',
     config = {
         attach_to_untracked = false,
         on_attach = function(bufnr)
@@ -636,6 +665,7 @@ plugin 'nvim-autopairs' {
             -- shell
             { rule('then', 'fi', 'sh') :end_wise(cond.starts_with('if')) },
             { rule('do', 'done', 'sh') :end_wise(cond.starts_with('for')) },
+            { rule('do', 'done', 'sh') :end_wise(cond.starts_with('while')) },
             { rule('in', 'esac', 'sh') :end_wise(cond.starts_with('case')) },
         }
     end,
@@ -704,73 +734,16 @@ plugin 'nvim-cmp' {
     end,
 }
 
-plugin 'nvim-treesitter' {
-    'nvim-treesitter/nvim-treesitter',
-    -- build = ':TSUpdate',
-    init = function()
-        -- https://github.com/anasrar/nvim-treesitter-parser-bin/tree/main
-        -- TODO jobstart or log
-        function _G.treesitter_update_parsers()
-            local path = vim.fn.stdpath('data') .. '/lazy/nvim-treesitter/parser'
-            local file = path .. '/all.zip'
-            local url = string.format('https://github.com/anasrar/nvim-treesitter-parser-bin/releases/download/%s/all.zip', vim.fn.has('win32') == 1 and 'window' or 'linux')
-
-            print('Downloading treesitter parsers...')
-            vim.fn.system { 'curl', '-L', url, '-o', file }
-            if vim.v.shell_error ~= 0 then
-                util.error('Failed to download.')
-                return
-            end
-
-            print('Extracting...')
-            if vim.fn.has('win32') == 1 then
-                vim.fn.system { 'powershell', '-c', 'Expand-Archive', '-Path', file, '-DestinationPath', path }
-            else
-                vim.fn.system { 'unzip', '-o', '-j', file, '-d', path }
-            end
-            if vim.v.shell_error ~= 0 then
-                util.error('Failed to extract.')
-            end
-
-            print('Done.')
-        end
-    end,
-    config = function()
-        -- avoid using cl on windows
-        -- require('nvim-treesitter.install').compilers = { 'clang', 'gcc', 'zig' }
-
-        require('nvim-treesitter.configs').setup {
-            -- ensure_installed = { 'c', 'cpp', 'dart', 'go', 'html', 'lua', 'python', 'comment', 'regex', 'markdown', 'markdown_inline', 'vimdoc' },
-            highlight = {
-                enable = true,
-                disable = { 'bash', 'make', 'html' },
-            }
-        }
-
-        -- use html parser on xml [https://github.com/nvim-treesitter/nvim-treesitter/issues/3295]
-        vim.treesitter.language.register('html', { 'xml' })
-
-        -- To avoid nvim builtin treesitter parsers causing errors, I have to remove all other than the plugin dirs of the list `nvim_get_runtime_file('parser', v:true)`.
-        -- Because `.../usr/lib/nvim` only contains `parser` directory, I just remove it from runtimepath.
-        -- https://github.com/nvim-treesitter/nvim-treesitter#i-get-query-error-invalid-node-type-at-position
-        for _, p in ipairs(vim.opt.runtimepath:get()) do
-            if string.match(p, '/lib/nvim') then
-                vim.opt.runtimepath:remove(p)
-            end
-        end
-    end,
-}
-
 plugin 'nvim-ufo' {
     'kevinhwang91/nvim-ufo',
     dependencies = { 'kevinhwang91/promise-async', 'nvim-treesitter/nvim-treesitter' },
-    lazy = false, -- if being lazy, first input gets ignored.
+    event = 'VeryLazy', -- if being lazy based on keys, first input gets ignored.
     keys = {
         { 't'       , [[<Cmd>lua fold_toggle()<CR>]] },
-        { 'T'       , [[<Cmd>lua require("ufo").openAllFolds()<CR>]] },
+        { '<Space>t', [[<Cmd>lua require("ufo").openAllFolds()<CR>]] },
         { '<C-t>'   , [[<Cmd>lua require("ufo").closeAllFolds()<CR>]] },
-        { '\\'      , [[<Cmd>lua fold_close_same_level()<CR>]] },
-        { '<Space>r', [[<Cmd>lua fold_reload()<CR> ]] },
+        { 'T'       , [[<Cmd>lua fold_close_same_level()<CR>]] },
+        { '<Space>z', [[<Cmd>lua fold_reload()<CR> ]] },
     },
     init = function()
         vim.o.foldlevel = 99
@@ -782,6 +755,32 @@ plugin 'nvim-ufo' {
         vim.g.clojure_fold     = 1
         vim.g.markdown_folding = 1
         vim.g.sh_fold_enabled  = 7
+
+        -- TODO https://github.com/anasrar/nvim-treesitter-parser-bin/tree/main
+        -- function _G.setup_treesitter_parsers()
+        --     local path = vim.fn.stdpath('data') .. '/lazy/nvim-treesitter/parser'
+        --     local file = path .. '/all.zip'
+        --     local url = string.format('https://github.com/anasrar/nvim-treesitter-parser-bin/releases/download/%s/all.zip', vim.fn.has('win32') == 1 and 'window' or 'linux')
+        --
+        --     print('Downloading treesitter parsers...')
+        --     vim.fn.system { 'curl', '-L', url, '-o', file }
+        --     if vim.v.shell_error ~= 0 then
+        --         util.error('Failed to download.')
+        --         return
+        --     end
+        --
+        --     print('Extracting...')
+        --     if vim.fn.has('win32') == 1 then
+        --         vim.fn.system { 'powershell', '-c', 'Expand-Archive', '-Path', file, '-DestinationPath', path }
+        --     else
+        --         vim.fn.system { 'unzip', '-o', '-j', file, '-d', path }
+        --     end
+        --     if vim.v.shell_error ~= 0 then
+        --         util.error('Failed to extract.')
+        --     end
+        --
+        --     print('Done.')
+        -- end
     end,
     config = function()
         function _G.fold_reload()
@@ -833,7 +832,7 @@ plugin 'nvim-ufo' {
 
         local function handler(virtText, lnum, endLnum, width, truncate, ctx)
             -- Customize fold text [https://github.com/kevinhwang91/nvim-ufo#customize-fold-text]
-            local suffix = ('   %d '):format(endLnum - lnum) -- ↯ ↸ ⇣ ⇲ ➤ [https://www.benricho.org/symbol/unicode-arrows.html]
+            local suffix = ('  ⇣ %d '):format(endLnum - lnum) -- ↯ ↸ ⇣ ⇲ ➤ [https://www.benricho.org/symbol/unicode-arrows.html]
             local newVirtText = {}
             local method = get_foldmethod(ctx.bufnr)
 
@@ -888,8 +887,10 @@ plugin 'nvim-ufo' {
             open_fold_hl_timeout = 1, -- 0 value disables the highlight but remains virtTexts
             fold_virt_text_handler = handler,
             enable_get_fold_virt_text = true, -- enable 6th parameters of handler
-            provider_selector = function(_bufnr, filetype, _buftype)
-                if util.contains({ 'clojure', 'markdown', 'sh' }, filetype) then
+            provider_selector = function(bufnr, filetype, _buftype)
+                if vim.fn.getfsize(vim.api.nvim_buf_get_name(bufnr)) > 10000000 then
+                    return 'indent' -- use indent for larger files than 10MB
+                elseif util.contains({ 'clojure', 'markdown', 'sh' }, filetype) then
                     return '' -- use foldmethod = syntax | expr
                 elseif util.contains({ 'python', 'yaml' }, filetype) then
                     return 'indent'
@@ -909,7 +910,6 @@ plugin 'telescope.nvim' {
         'nvim-telescope/telescope-file-browser.nvim',
     },
     keys = {
-        { '<A-x>'   , [[<Cmd>lua require('telescope.builtin').commands()<CR>]] },
         { '<C-s>'   , [[<Cmd>lua require('telescope.builtin').current_buffer_fuzzy_find()<CR>]] },
         { '<Space>e', [[<Cmd>lua require('telescope').load_extension('file_browser').file_browser()<CR>]] },
         { '<Space>f', [[<Cmd>lua require('telescope.builtin').find_files()<CR>]] },
@@ -917,10 +917,14 @@ plugin 'telescope.nvim' {
         { '<Space>h', [[<Cmd>lua require('telescope.builtin').help_tags()<CR>]] },
         { '<Space>m', [[<Cmd>lua require('telescope.builtin').filetypes()<CR>]] },
         { '<Space>q', [[<Cmd>lua require('telescope.builtin').quickfixhistory()<CR>]] },
+        { '<Space>r', [[<Cmd>lua require('telescope.builtin').oldfiles()<CR>]] },
         { '<Space>s', [[<Cmd>lua require('telescope.builtin').grep_string()<CR>]] },
         { '<Space>;', [[<Cmd>lua require('telescope.builtin').buffers()<CR>]] },
-        { '<Space>:', [[<Cmd>lua require('telescope.builtin').oldfiles()<CR>]] },
+        { '<Space>:', [[<Cmd>lua require('telescope.builtin').commands()<CR>]] },
         { '<Space>/', [[<Cmd>lua require('telescope.builtin').search_history(telescope_config())<CR>]] },
+        -- TODO use env
+        { '<Space>b', [[<Cmd>lua require('telescope.builtin').find_files({ cwd = '~/shared/memo' })<CR>]] },
+        { '<Space>B', [[<Cmd>lua require('telescope.builtin').grep_string({ cwd = '~/shared/memo' })<CR>]] },
     },
     config = function()
         require('telescope').setup {
@@ -964,30 +968,24 @@ plugin 'telescope.nvim' {
     end,
 }
 
-::highlight::
-
-plugin 'zephyr' {
-    'glepnir/zephyr-nvim',
-    priority = 1000,
+plugin 'toggleterm.nvim' {
+    'akinsho/toggleterm.nvim', version = '*',
+    keys = {
+        { '<Space>p' , '<Cmd>ToggleTerm direction=horizontal<CR>' },
+        { '<Space>\\', '<Cmd>ToggleTerm direction=float<CR>' },
+        { '<Space>y' , '<Cmd>ToggleTermSendCurrentLine<CR>' },
+        { '<Space>y' , '<Cmd>ToggleTermSendVisualSelection<CR>', mode = { 'x' } },
+    },
     config = function()
-        vim.o.background = 'dark'
-        vim.o.termguicolors = true
-        vim.cmd.colorscheme 'zephyr'
-
-        set.highlight('Visual')     [[guifg=NONE guibg=#2d3f76]]
-        set.highlight('Search')     [[guifg=#c8d3f5 guibg=#3e68d7]]
-        set.highlight('CurSearch')  [[guifg=#1b1d2b guibg=#ff966c]]
-        set.highlight('IncSearch')  [[guifg=#1b1d2b guibg=#ff966c]]
-
-        set.highlight('DiffAdd')    [[ctermfg=NONE ctermbg=22  guifg=NONE guibg=#394634 term=bold]]
-        set.highlight('DiffChange') [[ctermfg=NONE ctermbg=17  guifg=NONE guibg=#354257 term=bold]]
-        set.highlight('DiffDelete') [[ctermfg=NONE ctermbg=0   guifg=NONE guibg=#000000 term=bold]]
-        set.highlight('DiffText')   [[ctermfg=NONE ctermbg=110 guifg=NONE guibg=#37636e term=reverse]]
+        require("toggleterm").setup()
     end,
 }
 
+::highlight::
+
 plugin 'nvim-pqf' {
     'yorickpeterse/nvim-pqf',
+    event = 'VeryLazy',
     config = true,
 }
 
@@ -1049,13 +1047,9 @@ end
 plugin 'mason.nvim' {
     'williamboman/mason.nvim',
     build = ':MasonUpdate',
-    cmd = { 'Mason', 'MasonInstall', 'MasonUninstall', 'MasonUninstallAll', 'MasonUpdate', 'MasonLog', 'MasonEnsure' },
-    config = function()
-        require('mason').setup()
-
-        set.command('MasonEnsure') [[lua mason_ensure()]]
-
-        function _G.mason_ensure()
+    cmd = { 'Mason', 'MasonInstall', 'MasonUninstall', 'MasonUninstallAll', 'MasonUpdate', 'MasonLog' },
+    init = function()
+        function _G.setup_manson()
             vim.cmd [[Mason]]
             for k, _ in pairs(util.peel(packages)) do
                 local p = require('mason-registry').get_package(k)
@@ -1065,45 +1059,66 @@ plugin 'mason.nvim' {
             end
         end
     end,
+    config = true,
 }
 
-plugin 'null-ls' {
-    'jose-elias-alvarez/null-ls.nvim',
-    dependencies = { 'nvim-lua/plenary.nvim', 'williamboman/mason.nvim' },
-    event = 'VeryLazy',
+plugin 'nvim-lspconfig' {
+    'neovim/nvim-lspconfig',
+    dependencies = {
+        'williamboman/mason-lspconfig.nvim',
+        'hrsh7th/cmp-nvim-lsp',
+        'ray-x/lsp_signature.nvim',
+    },
     config = function()
-        set.keymap('n') {
-            'K'    , [[<Cmd>lua vim.lsp.buf.hover()<CR>]],
-            '<C-k>', [[<Cmd>lua vim.diagnostic.open_float()<CR>]],
-            'me'   , [[<Cmd>lua vim.diagnostic.setloclist()<CR>]],
+        vim.diagnostic.config {
+            float = { source = "always" },
+            virtual_text = { prefix = '●', severity_limit = 'Error' },
+            severity_sort = true,
         }
 
-        local nullls = require('null-ls')
-
-        local sources = {}
-        for k, v in pairs(packages.linter) do
-            local p = require('mason-registry').get_package(k)
-            if p:is_installed() then
-                table.insert(sources, nullls.builtins.diagnostics[k].with(vim.tbl_deep_extend('keep', v, { method = nullls.methods.DIAGNOSTICS_ON_SAVE })))
-            end
-        end
-        for k, v in pairs(packages.formatter) do
-            local p = require('mason-registry').get_package(k)
-            if p:is_installed() then
-                table.insert(sources, nullls.builtins.formatting[k].with(v))
-            end
+        -- customize preview window [https://neovim.discourse.group/t/lsp-hover-float-window-too-wide/3276]
+        local orig_util_open_floating_preview = vim.lsp.util.open_floating_preview
+        function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
+          opts = opts or {}
+          opts.border = opts.border or 'single'
+          opts.max_width= opts.max_width or vim.fn.winwidth(0)
+          return orig_util_open_floating_preview(contents, syntax, opts, ...)
         end
 
-        nullls.setup {
-            sources = sources,
-            on_attach = function(client, bufnr)
-                if client.supports_method('textDocument/formatting') then
-                    set.autocmd('BufWritePre') {
-                        buffer = bufnr,
-                        callback = function()
-                            vim.lsp.buf.format { bufnr = bufnr, filter = function(c) return c.name == 'null-ls' end }
-                        end
-                    }
+        local lsp_on_attach = function(_client, bufnr)
+            vim.wo[0].signcolumn = 'yes' -- signcolumn is a window option
+            require('lsp_signature').on_attach({ hint_prefix = '' }, bufnr)
+            set.keymap('n', { buffer = true }) {
+                'K'    , [[<Cmd>lua vim.lsp.buf.hover()<CR>]],
+                '<C-k>', [[<Cmd>lua vim.diagnostic.open_float()<CR>]],
+                'me'   , [[<Cmd>lua vim.diagnostic.setloclist()<CR>]],
+                'mc'   , [[<Cmd>lua vim.lsp.buf.rename()<CR>]],
+                'ma'   , [[<Cmd>lua vim.lsp.buf.code_action()<CR>]],
+                'mf'   , [[<Cmd>lua vim.lsp.buf.formatting()<CR>]],
+                'mr'   , [[<Cmd>lua vim.lsp.buf.references()<CR>]],
+                'mi'   , [[<Cmd>lua vim.lsp.buf.implementation()<CR>]],
+                'mt'   , [[<Cmd>lua vim.lsp.buf.type_definition()<CR>]],
+                'md'   , [[<Cmd>lua vim.lsp.buf.definition()<CR>]],
+                'mD'   , [[<Cmd>lua vim.lsp.buf.declaration()<CR>]],
+            }
+        end
+
+        local config = function(opts)
+            opts = opts or {}
+            local default = {
+                on_attach = lsp_on_attach,
+                capabilities = require('cmp_nvim_lsp').default_capabilities(),
+                single_file_support = true,
+            }
+            return vim.tbl_deep_extend('force', default, opts)
+        end
+
+        require("mason-lspconfig").setup()
+        require("mason-lspconfig").setup_handlers {
+            function (server_name)
+                local opts = packages.lsp[require('mason-lspconfig.mappings.server').lspconfig_to_package[server_name]]
+                if opts ~= nil then
+                    require("lspconfig")[server_name].setup(config(opts))
                 end
             end,
         }
@@ -1116,11 +1131,19 @@ plugin 'goto-preview' {
     config = function()
         require('goto-preview').setup()
         set.keymap('n') {
-            'm.'   , [[<Cmd>lua require('goto-preview').goto_preview_definition()<CR>]],
-            'm,'   , [[<Cmd>lua require('goto-preview').close_all_win()<CR>]],
+            'm.', [[<Cmd>lua require('goto-preview').goto_preview_definition()<CR>]],
+            'm,', [[<Cmd>lua require('goto-preview').close_all_win()<CR>]],
         }
     end,
 }
+
+plugin 'fidget.nvim' {
+    'j-hui/fidget.nvim', tag = 'legacy',
+    event = 'LspAttach',
+    config = true,
+}
+
+goto exit
 
 plugin 'flutter-tools.nvim' {
     'akinsho/flutter-tools.nvim',
@@ -1138,10 +1161,23 @@ plugin 'flutter-tools.nvim' {
     },
 }
 
-plugin 'fidget.nvim' {
-    'j-hui/fidget.nvim', tag = 'legacy',
-    event = 'LspAttach',
-    config = true,
+plugin 'vim-translator' {
+    'voldikss/vim-translator',
+    keys = {
+        { '\\e', ':<C-u>Translate --target_lang=en ' },
+        { '\\j', ':<C-u>Translate --target_lang=ja ' },
+        { '\\d', ':<C-u>Translate --target_lang=de ' },
+        { '\\e', ':Translate --target_lang=en<CR>', mode = { 'x' } },
+        { '\\j', ':Translate --target_lang=ja<CR>', mode = { 'x' } },
+        { '\\d', ':Translate --target_lang=de<CR>', mode = { 'x' } },
+        { '\\we', 'viw:Translate --target_lang=en<CR>' },
+        { '\\wj', 'viw:Translate --target_lang=ja<CR>' },
+        { '\\wd', 'viw:Translate --target_lang=de<CR>' },
+    },
+    init = function()
+        vim.g.translator_target_lang = 'en'
+        vim.g.translator_default_engines = { 'google' }
+    end
 }
 
 ::exit::

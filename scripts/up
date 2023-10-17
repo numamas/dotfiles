@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink "${BASH_SOURCE:-$0}" || echo "${BASH_SOURCE:-$0}")")"; pwd)
-ROOT="$SCRIPT_DIR/.."
+ROOT="$(realpath "$SCRIPT_DIR/..")"
 
 exe() {
     echo "$*"; "$@"
@@ -13,14 +13,40 @@ exists() {
     type "$1" > /dev/null 2>&1
 }
 
-
 __default__() {
     __link__ && __tea__
 }
 
+__help__() {
+    echo -e 'default\texecute `link`, `tea` and `app`'
+    echo -e 'app\tinstall necessary packages'
+    echo -e 'clean\tremove config files of neovim'
+    echo -e 'copy\tcopy some files into the shared directory'
+    echo -e 'link\tcreate symlinks to each dotfile'
+    echo -e 'proxy\tconfigure proxy by editing the specific files'
+    echo -e 'tea\tinstall tea.xyz'
+
+    cat <<- EOS
+	a
+		b
+	EOS
+    exit 1
+}
+
 __app__() {
-    :
-    # curl git build-essential nnn xsel tmux
+    local pkgs=(curl git unzip build-essential docker.io vim-gtk3 tmux nnn xsel luarocks)
+    # pipx -> pipx install virtualenv
+
+    # need to proceed backwards when using unset inside interation
+    for ((i = ${#pkgs[@]} - 1; i > -1; i--)); do
+        if dpkg-query --list | tail +6 | awk '{print $2}' | grep "${pkgs[$i]}" > /dev/null; then
+            unset pkgs[$i]
+        fi
+    done
+    if [ -n "${pkgs[*]}" ]; then
+        echo "installing ${pkgs[*]} via apt..."
+        sudo -E apt install -y "${pkgs[@]}"
+    fi
 }
 
 __clean__() {
@@ -30,9 +56,11 @@ __clean__() {
 }
 
 __copy__() {
-    local copydir="$HOME/shared/copy"
-    exe mkdir -p "$copydir"
-    exe cp "$ROOT/init.lua" "$copydir/"
+    local copydir="$HOME/shared/config/copy"
+    exe mkdir -p "$copydir/windows"
+    exe cp "$ROOT/init.lua"            "$copydir/"
+    exe cp "$ROOT/windows/keymaps.ahk" "$copydir/windows"
+    exe cp "$ROOT/windows/link.bat"    "$copydir/windows"
 }
 
 __link__() {
@@ -41,6 +69,24 @@ __link__() {
     exe ln -sf "$ROOT/init.lua"  "$HOME/.config/nvim/init.lua"
     exe ln -sf "$ROOT/inputrc"   "$HOME/.inputrc"
     exe ln -sf "$ROOT/tmux.conf" "$HOME/.tmux.conf"
+}
+
+__proxy__() {
+    if type docker > /dev/null 2>&1; then
+        echo 'updating proxy configuration for docker...'
+        sudo mkdir -p '/etc/systemd/system/docker.service.d'
+        echo '  > overwriting "/etc/systemd/system/docker.service.d/http-proxy.conf"'
+        cat <<- EOS | sudo tee '/etc/systemd/system/docker.service.d/http-proxy.conf' > /dev/null
+		[Service]                                
+		Environment="HTTP_PROXY=$http_proxy"   
+		Environment="HTTPS_PROXY=$https_proxy" 
+		Environment="NO_PROXY=$no_proxy"       
+		EOS
+        echo '  > restarting service'
+        sudo systemctl daemon-reload
+        sudo systemctl restart docker
+        echo '  > done'
+    fi
 }
 
 __tea__() {

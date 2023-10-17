@@ -1,0 +1,15 @@
+#!/bin/bash
+# set -eu -o pipefail
+
+if ! type docker > /dev/null 2>&1; then
+    echo "error: command 'docker' not found"
+    echo "It can be installed with 'sudo -E apt install docker.io'."
+    exit 1
+fi
+
+if [ "${1:-}" == '--watch' ] || [ "${1:-}" == '-w' ]; then
+    shift
+    docker run -it --rm -v "`pwd`":/workdir plass/mdtopdf w-mdtopdf "$@"
+else
+    docker run -it --rm -v "`pwd`":/workdir plass/mdtopdf mdtopdf "$@"
+fi

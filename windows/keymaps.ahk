@@ -102,6 +102,7 @@ vk1D & Up::   Send, #^{Right}       ;; change to next workspace
 #If WinActive("ahk_exe ZipPla.exe")
      ^r:: Send, {F5}                   ;; Reload
      F2:: Send, {AppsKey}{End}{Enter}  ;; Open Property to change filename
+     +Insert:: Send, ^v                ;; Paste
 #If
 
 if_ctrl(true_kc, false_kc) {
