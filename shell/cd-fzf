@@ -1,0 +1,47 @@
+#!/bin/bash
+set -u
+OUTFILE="$HOME/.cd-fzf"
+
+__load__() {
+	local cwd
+	if [ -f "$OUTFILE" ]; then
+		cwd="$(cat "$OUTFILE")"
+	else
+		cwd="."
+	fi
+	(cd "$cwd" && pwd)
+}
+
+__list__() {
+	local cwd
+	cwd="$(__load__)"
+	echo "$cwd"
+	echo '../'
+	# How do I get a list of dirs and symlinked dirs with 'find'?
+	# shellcheck disable=2012
+	# ls -1 --color=always -d -- "$cwd"/*/ 2>/dev/null | sed "s|$cwd/||"
+	ls -1 --color=always --group-directories-first -- "$cwd" 2>/dev/null | sed "s|$cwd/||"
+}
+
+__relative_move__() {
+	local cwd
+	cwd="$(__load__)/$1"
+	if [ -d "$cwd" ]; then
+		(cd "$cwd" && pwd) > "$OUTFILE"
+	fi
+}
+
+__default__() {
+	echo "$PWD" > "$OUTFILE"
+	__list__ | fzf --header-lines=1 \
+		--bind "enter:reload($0 relative_move {} && $0 list)+clear-query+beginning-of-line" \
+		--bind "ctrl-g:accept" \
+		> /dev/null
+
+	local exitcode="$?"
+	__load__
+	rm "$OUTFILE"
+	exit $exitcode
+}
+
+eval "__${1:-default}__" "${2:-}"
