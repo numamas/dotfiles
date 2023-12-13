@@ -1,7 +1,3 @@
--- TODO
--- https://github.com/tom-anders/telescope-vim-bookmarks.nvim
--- https://github.com/MattesGroeger/vim-bookmarks
-
 local AUGROUP = vim.api.nvim_create_augroup('user_config', { clear = true })
 
 local util = {
@@ -228,7 +224,7 @@ set.section 'mapping' {
         set.keymap('n') {
             '<C-q>', [[:copen<CR>]],
         }
-        
+
         -- q to close
         set.autocmd('FileType', { 'help', 'qf', 'fugitive' }) {
             callback = function()
@@ -322,7 +318,7 @@ set.section 'diff' {
         if vim.wo.diff then
             vim.wo.number = false
             vim.wo.wrap = true
-            
+
             set.keymap('n') {
                 'q'     , ':qa<CR>',
                 '<Up>'  , '[czz',
@@ -378,28 +374,28 @@ set.section 'occur' {
 --  function! s:Occur()
 --      let org_efm = &errorformat
 --      let &errorformat = '%f:%l:%m'
--- 
+--
 --      " Clear quickfix
 --      call setqflist([])
--- 
+--
 --      " Log the current cursor position
 --      normal! H
--- 
+--
 --      " Execute occur
 --      let expr = 'caddexpr expand("%") . ":" . line(".") . ":" . getline(".")'
 --      execute 'silent keepjumps g/' . @/ . '/' . expr
--- 
+--
 --      " Open the results window (and restore cursor position)
 --      keepjumps cfirst 1
 --      exec "normal! \<C-o>"
 --      copen
--- 
+--
 --      " TODO Map the key sequence on the QuickFix
 --      " nnoremap <buffer> <silent> <Space> <C-w><C-_>
 --      " nnoremap <buffer> <silent> x       10<C-w>_<CR>zxzz:copen<CR>
 --      " nnoremap <buffer> <silent> <CR>    <CR>zxzz:cclose<CR>
 --      " nnoremap <buffer> <silent> q       :cclose<CR>
--- 
+--
 --      " Restore errorformat
 --      let &errorformat = org_efm
 --  endfunction
@@ -422,7 +418,7 @@ set.section 'ruler' {
                 end
 
                 if vim.bo.softtabstop ~= 0 then
-                    table.insert(s, 'sts=' .. vim.bo.softtabstop) 
+                    table.insert(s, 'sts=' .. vim.bo.softtabstop)
                 end
                 if vim.bo.shiftwidth ~= 0 then
                     table.insert(s, 'sw=' .. vim.bo.shiftwidth)
@@ -492,6 +488,24 @@ set.section 'tmux-navigate' {
     end
 }
 
+set.section 'winrestview' {
+    -- https://stackoverflow.com/questions/4251533/vim-keep-window-position-when-switching-buffers
+    function()
+        set.autocmd('BufLeave', '*') {
+            callback = function()
+                vim.b.winview = vim.fn.winsaveview()
+            end
+        }
+        set.autocmd('BufEnter', '*') {
+            callback = function()
+                if vim.b.winview then
+                    vim.fn.winrestview(vim.b.winview)
+                end
+            end
+        }
+    end
+}
+
 plugin 'zephyr' {
     'glepnir/zephyr-nvim',
     priority = 1000,
@@ -555,7 +569,7 @@ plugin 'bufferline.nvim' {
             end
         end
 
-        set.keymap('n') {
+        set.keymap('ni') {
             '<C-PageDown>', function() cycle_buffer(true) end,
             '<C-PageUp>'  , function() cycle_buffer(false) end,
         }
@@ -981,6 +995,14 @@ plugin 'toggleterm.nvim' {
     end,
 }
 
+-- TEST
+plugin 'vim-bookmarks' {
+    'MattesGroeger/vim-bookmarks',
+    keys = {
+        { 'mm' },
+    }
+}
+
 ::highlight::
 
 plugin 'nvim-pqf' {
@@ -1008,8 +1030,11 @@ plugin 'vim-ps1' {
 
 ::development::
 
+if vim.fn.has('win32') == 1 then goto exit end
+
 packages = {
     lsp = {
+        ['efm'] = {},
         ['gopls'] = {},
         ['pyright'] = {},
     },
@@ -1018,31 +1043,69 @@ packages = {
         ['delve'] = {},
     },
     linter = {
-        ['luacheck'] = { extra_args = { '--no-global', '--no-max-line-length', '--ignore', '521' } },
-        ['shellcheck'] = { extra_args = { '-e', '1091', '-e', '2002', '-e', '2004', '-e', '2016', '-e', '2164'} },
+        ['hadolint'] = { ft = { 'dockerfile' } },
+        ['luacheck'] = { ft = { 'lua' }, extra_args = { '--no-global', '--no-max-line-length', '--ignore', '521' } },
+        ['shellcheck'] = { ft = { 'sh' }, extra_args = { '-e', '1091', '-e', '2002', '-e', '2004', '-e', '2016', '-e', '2164'} },
     },
     formatter = {
-        ['goimports'] = {},
-        ['isort'] = {},
+        ['goimports'] = { ft = { 'go' } },
+        ['isort'] = { ft = { 'python' } },
     },
 }
 
-if vim.fn.has('win32') == 1 then
-    packages = {
-        lsp = {
-            ['gopls'] = {},
-        },
-        dap = {},
-        linter = {
-            ['flake8'] = {},
-            ['shellcheck'] = { extra_args = { '-e', 'SC2002', '-e', '2004', '-e', '2016' } },
-        },
-        formatter = {
-            ['goimports'] = {},
-            ['isort'] = {},
-        },
-    }
-end
+efm = {
+    filetypes = function()
+        local results = {}
+        for _, specs in pairs { packages.linter, packages.formatter } do
+            for _, spec in pairs(specs) do
+                for _, filetype in pairs(spec.ft) do
+                    table.insert(results, filetype)
+                end
+            end
+        end
+        return results
+    end,
+
+    languages = function()
+        local function efm_extend(base, extra_args)
+            if not extra_args then
+                return base
+            end
+
+            local add_extra_args = function(s)
+                return string.gsub(s, '^[^%s]+', '%0 ' .. table.concat(extra_args, ' '))
+            end
+            if base.formatCommand then
+                base.formatCommand = add_extra_args(base.formatCommand)
+            elseif base.lintCommand then
+                base.lintCommand = add_extra_args(base.lintCommand)
+            end
+            return base
+        end
+
+        local results = {}
+
+        for name, spec in pairs(packages.linter) do
+            for _, filetype in pairs(spec.ft) do
+                if not results[filetype] then
+                    results[filetype] = {}
+                end
+                table.insert(results[filetype], efm_extend(require(string.format('efmls-configs.linters.%s', name)), spec.extra_args))
+            end
+        end
+
+        for name, spec in pairs(packages.formatter) do
+            for _, filetype in pairs(spec.ft) do
+                if not results[filetype] then
+                    results[filetype] = {}
+                end
+                table.insert(results[filetype], efm_extend(require(string.format('efmls-configs.formatters.%s', name)), spec.extra_args))
+            end
+        end
+
+        return results
+    end,
+}
 
 plugin 'mason.nvim' {
     'williamboman/mason.nvim',
@@ -1066,6 +1129,7 @@ plugin 'nvim-lspconfig' {
     'neovim/nvim-lspconfig',
     dependencies = {
         'williamboman/mason-lspconfig.nvim',
+        'creativenull/efmls-configs-nvim',
         'hrsh7th/cmp-nvim-lsp',
         'ray-x/lsp_signature.nvim',
     },
@@ -1113,14 +1177,38 @@ plugin 'nvim-lspconfig' {
             return vim.tbl_deep_extend('force', default, opts)
         end
 
-        require("mason-lspconfig").setup()
-        require("mason-lspconfig").setup_handlers {
+        require('mason-lspconfig').setup()
+        require('mason-lspconfig').setup_handlers {
             function (server_name)
                 local opts = packages.lsp[require('mason-lspconfig.mappings.server').lspconfig_to_package[server_name]]
                 if opts ~= nil then
-                    require("lspconfig")[server_name].setup(config(opts))
+                    require('lspconfig')[server_name].setup(config(opts))
                 end
             end,
+
+            ['efm'] = function()
+                require('lspconfig').efm.setup(config {
+                    init_options = {
+                        documentFormatting = true,
+                        documentRangeFormatting = true,
+                    },
+                    filetypes = efm.filetypes(),
+                    settings = {
+                        rootMarkers = { '.git/' },
+                        languages = efm.languages(),
+                    },
+                })
+            end,
+        }
+
+        -- TODO format on save
+        set.autocmd('BufWritePre') {
+            callback = function(ev)
+                local efm = vim.lsp.get_active_clients { name = 'efm', bufnr = ev.buf }
+                if not vim.tbl_isempty(efm) then
+                    vim.lsp.buf.format { name = 'efm' }
+                end
+            end
         }
     end,
 }
